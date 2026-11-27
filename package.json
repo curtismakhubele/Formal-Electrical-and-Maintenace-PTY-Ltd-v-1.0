@@ -1,0 +1,12 @@
+{
+  "name": "formal-em-company-site",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Company website and enquiry workspace for Formal Electrical and Maintenance (Pty) Ltd",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

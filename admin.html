@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102a3a">
+  <meta name="robots" content="noindex,nofollow"><title>Enquiry workspace | Formal Electrical & Maintenance</title>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/admin.css"><script src="/admin.js" defer></script>
+</head>
+<body class="admin-page">
+  <header class="site-header admin-header"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M24 5 12 24h9l-2 15 14-22h-10l1-12Z"/></svg></span><span class="brand-name">FORMAL<span>Enquiry workspace</span></span></a><span class="admin-private">PRIVATE WORKSPACE</span></header>
+  <main class="admin-main">
+    <section class="admin-login" id="login-view"><p class="eyebrow"><span></span> Team access</p><h1>Enquiry workspace</h1><p>Sign in with the private access key configured by the site administrator.</p><form id="login-form"><label>Access key<input type="password" id="access-key" autocomplete="current-password" minlength="32" required placeholder="Private administrator key"></label><button class="button button-dark" type="submit">Open enquiries <span aria-hidden="true">↗</span></button><p class="form-status" id="login-status" role="status" aria-live="polite"></p></form><a class="admin-home" href="/">← Back to company website</a></section>
+    <section class="admin-dashboard" id="dashboard-view" hidden><div class="admin-title"><div><p class="eyebrow"><span></span> Private workspace</p><h1>Project enquiries</h1><p>Requests submitted through the company website.</p></div><button class="button button-light" id="sign-out" type="button">Sign out</button></div><div class="admin-toolbar"><span id="enquiry-count">Loading enquiries…</span><button class="admin-refresh" id="refresh" type="button">Refresh ↻</button></div><div class="enquiry-list" id="enquiry-list"></div><p class="form-status" id="dashboard-status" role="status" aria-live="polite"></p></section>
+  </main>
+</body>
+</html>
