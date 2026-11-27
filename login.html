@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#062654"><meta name="robots" content="noindex,nofollow">
+  <title>Sign in | Formal Electrical &amp; Maintenance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/login.css"><script src="/login.js" defer></script>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-brand"><a class="brand" href="/"><span class="bolt">ϟ</span><span>FORMAL<small>ELECTRICAL &amp; MAINTENANCE</small></span></a><div><span class="kicker">WE CREATE LIGHT POWER FOR YOU</span><h1>Your projects, all in one place.</h1><p>Secure access for administrators and assigned project users.</p></div></section>
+    <section class="login-panel"><a class="back" href="/">← Back to website</a><h2>Sign in</h2><p class="sub">Use the account provided by your administrator.</p>
+      <form id="login-form"><fieldset class="roles"><legend>Account type</legend><label><input type="radio" name="role" value="admin" checked> Admin</label><label><input type="radio" name="role" value="assigned"> Assigned user</label></fieldset>
+        <label class="field">Email address<input name="email" type="email" autocomplete="username" maxlength="254" required placeholder="you@company.com"></label>
+        <label class="field">Password<input name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"></label>
+        <div class="form-row"><label><input type="checkbox" name="remember"> Keep me signed in for this session</label><a href="mailto:info@formalelectrical.co.za?subject=Password%20reset%20request">Need help?</a></div>
+        <button class="submit" type="submit">Sign in securely</button><p id="login-status" class="status" role="status" aria-live="polite"></p>
+      </form>
+      <p class="setup-note">Administrators create accounts on the server. Public registration is disabled.</p>
+    </section>
+  </main>
+</body>
+</html>

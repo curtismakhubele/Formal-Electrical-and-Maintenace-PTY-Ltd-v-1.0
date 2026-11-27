@@ -1,23 +1,19 @@
 # Formal Electrical & Maintenance website
 
-Responsive public website for Formal Electrical and Maintenance (Pty) Ltd, styled from the corporate website mockup supplied for this project.
+The Node.js site and private client workspace for Formal Electrical and Maintenance (Pty) Ltd.
 
-## Run locally
+## Local use
 
-This is a static site. Open `index.html` directly, or serve this directory with any static file server. For example, with Node.js installed:
+Install Node.js 20 or newer. Run `npm run create-user` to create a local administrator or assigned-user account, then run `npm start`. Account password hashes and enquiry records are stored under `DATA_DIR` (default `./data`); never commit that directory or `.env` files.
 
-```sh
-node server.js
-```
+## Azure App Service deployment
 
-Then open `http://localhost:3000`.
+The workflow in `.github/workflows/deploy-azure.yml` packages the Node app and deploys it to the existing Linux App Service `formal-electrical-and-maintenace` when run manually or after a push to `main`. It requires the GitHub Actions repository secret `AZURE_WEBAPP_PUBLISH_PROFILE`. If that secret is absent, the workflow safely skips its deploy step.
 
-## Publish
+For persistent account and enquiry files, set the App Service setting `DATA_DIR` to `/home/formal-em-data`. Set `ADMIN_SETUP_TOKEN` to a long random one-time value, then open `/setup.html` on the deployed site to create the first administrator. Once setup succeeds, remove `ADMIN_SETUP_TOKEN` from App Service settings. The setup route is disabled when the token is absent and permanently closes after the first account is created.
 
-The site is compatible with GitHub Pages. In the repository settings, set Pages to deploy from the `main` branch and the repository root. The public site uses relative asset paths and does not require a build step.
+The setup password is sent directly over HTTPS to this App Service and stored as a salted scrypt hash. Do not put administrator passwords or user data in GitHub or the repository. The initial account is created in the Azure `DATA_DIR`; local `data/` is not deployed.
 
-## Contact links
+## Scope
 
-Phone number, email address, and street address displayed on the site are reproduced from the supplied mockup. Confirm these details with the business before using them in advertising. The contact actions open the visitor’s phone or email application; the static Pages site does not submit enquiries to a server.
-
-The bundled `server.js`, `admin.html`, and `admin.js` are for a separately hosted enquiry service. They are not linked from the public website and are not required for GitHub Pages.
+The admin workspace currently supports enquiries and assigned-user account creation. Project tracking, COC certificate records, invoice creation/storage, and company settings still need their application data models and screens.

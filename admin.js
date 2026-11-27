@@ -1,16 +1,8 @@
-const loginView = document.querySelector('#login-view');
+const sessionCheck = document.querySelector('#session-check');
 const dashboard = document.querySelector('#dashboard-view');
-const loginForm = document.querySelector('#login-form');
-const loginStatus = document.querySelector('#login-status');
 const dashboardStatus = document.querySelector('#dashboard-status');
 const list = document.querySelector('#enquiry-list');
 const count = document.querySelector('#enquiry-count');
-let accessKey = sessionStorage.getItem('formal-admin-key') || '';
-
-function showDashboard(show) {
-  loginView.hidden = show;
-  dashboard.hidden = !show;
-}
 
 function setStatus(node, message, error = false) {
   node.textContent = message;
@@ -21,11 +13,12 @@ async function loadEnquiries() {
   setStatus(dashboardStatus, '');
   count.textContent = 'Loading enquiries…';
   try {
-    const response = await fetch('/api/admin/enquiries', {
-      headers: { Authorization: `Bearer ${accessKey}` },
-      cache: 'no-store'
-    });
+    const response = await fetch('/api/admin/enquiries', { cache: 'no-store', credentials: 'same-origin' });
     const data = await response.json();
+    if (response.status === 401 || response.status === 403) {
+      location.replace('/login.html?role=admin');
+      return;
+    }
     if (!response.ok) throw new Error(data.error || 'Could not load enquiries.');
     list.replaceChildren();
     count.textContent = `${data.enquiries.length} ${data.enquiries.length === 1 ? 'enquiry' : 'enquiries'}`;
@@ -63,50 +56,56 @@ async function loadEnquiries() {
     });
   } catch (error) {
     count.textContent = 'Enquiries unavailable';
-    setStatus(dashboardStatus, error.message, true);
-    if (error.message.includes('access') || error.message.includes('configured')) {
-      sessionStorage.removeItem('formal-admin-key');
-      accessKey = '';
-      showDashboard(false);
-      setStatus(loginStatus, error.message, true);
-    }
+    setStatus(dashboardStatus, error.message || 'The server could not be reached.', true);
   }
 }
 
-loginForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const key = document.querySelector('#access-key').value;
-  setStatus(loginStatus, 'Checking access…');
-  accessKey = key;
-  try {
-    const response = await fetch('/api/admin/enquiries', {
-      headers: { Authorization: `Bearer ${accessKey}` },
-      cache: 'no-store'
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Access could not be verified.');
-    sessionStorage.setItem('formal-admin-key', accessKey);
-    setStatus(loginStatus, '');
-    showDashboard(true);
-    await loadEnquiries();
-  } catch (error) {
-    accessKey = '';
-    setStatus(loginStatus, error.message, true);
-  }
-});
+async function signOut() {
+  try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
+  finally { location.replace('/login.html'); }
+}
 
 document.querySelector('#refresh').addEventListener('click', loadEnquiries);
-document.querySelector('#sign-out').addEventListener('click', () => {
-  sessionStorage.removeItem('formal-admin-key');
-  accessKey = '';
-  document.querySelector('#access-key').value = '';
-  list.replaceChildren();
-  setStatus(loginStatus, '');
-  showDashboard(false);
+document.querySelector('#sign-out').addEventListener('click', signOut);
+
+const createUserForm = document.querySelector('#create-user-form');
+const createUserStatus = document.querySelector('#create-user-status');
+createUserForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const button = createUserForm.querySelector('button[type="submit"]');
+  button.disabled = true;
+  createUserStatus.className = '';
+  createUserStatus.textContent = 'Creating assigned-user account…';
+  const formData = new FormData(createUserForm);
+  try {
+    const response = await fetch('/api/admin/users', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: formData.get('email'), password: formData.get('password') })
+    });
+    const data = await response.json();
+    if (response.status === 401 || response.status === 403) { location.replace('/login.html?role=admin'); return; }
+    if (!response.ok) throw new Error(data.error || 'Account could not be created.');
+    createUserForm.reset();
+    createUserStatus.className = 'success';
+    createUserStatus.textContent = `Assigned-user login created for ${data.user.email}. Share the password privately.`;
+  } catch (error) {
+    createUserStatus.className = 'error';
+    createUserStatus.textContent = error instanceof TypeError ? 'The server could not be reached.' : error.message;
+  } finally { button.disabled = false; }
 });
 
-if (accessKey) {
-  showDashboard(true);
-  loadEnquiries();
-}
-
+(async () => {
+  try {
+    const response = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
+    if (!response.ok) { location.replace('/login.html?role=admin'); return; }
+    const { user } = await response.json();
+    if (user.role !== 'admin') { location.replace('/login.html?role=admin'); return; }
+    sessionCheck.hidden = true;
+    dashboard.hidden = false;
+    await loadEnquiries();
+  } catch {
+    const note = document.querySelector('#session-status');
+    note.textContent = 'The sign-in server could not be reached.';
+  }
+})();

@@ -1,0 +1,49 @@
+name: Deploy to Azure App Service
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: azure-app-service-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Package Azure Node app
+        shell: bash
+        run: |
+          mkdir -p publish/assets
+          cp package.json server.js index.html styles.css app.js icon.svg manifest.webmanifest privacy.html admin.html admin.css admin-users.css auth-nav.css admin.js login.html login.css login.js portal.html portal.css portal.js setup.html setup.js publish/
+          cp assets/worker-hero.jpg assets/company-building.jpg publish/assets/
+
+      - name: Check Azure deployment secret
+        id: deployment_secret
+        shell: bash
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        run: |
+          if [[ -n "$PUBLISH_PROFILE" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Deployment skipped. Add AZURE_WEBAPP_PUBLISH_PROFILE to repository Actions secrets to enable deploys."
+          fi
+
+      - name: Deploy to Azure Web App
+        if: steps.deployment_secret.outputs.configured == 'true'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: formal-electrical-and-maintenace
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish

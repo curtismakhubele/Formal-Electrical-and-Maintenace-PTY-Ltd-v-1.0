@@ -4,7 +4,8 @@
   "private": true,
   "description": "Company website and enquiry workspace for Formal Electrical and Maintenance (Pty) Ltd",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "create-user": "node scripts/create-user.js"
   },
   "engines": {
     "node": ">=20"
