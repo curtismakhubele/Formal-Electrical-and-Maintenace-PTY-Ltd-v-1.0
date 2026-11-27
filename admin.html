@@ -2,17 +2,82 @@
 <html lang="en-ZA">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102a3a">
-  <meta name="robots" content="noindex,nofollow"><title>Enquiry workspace | Formal Electrical & Maintenance</title>
+  <meta name="robots" content="noindex,nofollow"><title>Admin workspace | Formal Electrical &amp; Maintenance</title>
   <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/admin.css"><link rel="stylesheet" href="/admin-users.css"><script src="/admin.js" defer></script>
 </head>
 <body class="admin-page">
-  <header class="site-header admin-header"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M24 5 12 24h9l-2 15 14-22h-10l1-12Z"/></svg></span><span class="brand-name">FORMAL<span>Enquiry workspace</span></span></a><span class="admin-private">PRIVATE WORKSPACE</span></header>
+  <header class="site-header admin-header">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M24 5 12 24h9l-2 15 14-22h-10l1-12Z"/></svg></span><span class="brand-name">FORMAL<span>Admin workspace</span></span></a>
+    <span class="admin-private">PRIVATE WORKSPACE</span>
+  </header>
   <main class="admin-main">
     <section class="admin-login" id="session-check"><p class="eyebrow"><span></span> Private workspace</p><h1>Checking access…</h1><p id="session-status" role="status" aria-live="polite">Verifying your administrator session.</p><a class="admin-home" href="/login.html?role=admin">Sign in as administrator</a></section>
-    <section class="admin-dashboard" id="dashboard-view" hidden><div class="admin-title"><div><p class="eyebrow"><span></span> Private workspace</p><h1>Admin workspace</h1><p>Manage account access and review website enquiries.</p></div><button class="button button-light" id="sign-out" type="button">Sign out</button></div>
-      <section class="account-panel"><div><h2>Create assigned-user login</h2><p>Create access for a staff member or client. Share their password privately.</p></div><form id="create-user-form"><label>Email address<input name="email" type="email" maxlength="254" autocomplete="off" required placeholder="person@company.com"></label><label>Temporary password<input name="password" type="password" minlength="14" maxlength="256" autocomplete="new-password" required placeholder="At least 14 characters"></label><button class="admin-refresh create-user-button" type="submit">Create assigned user</button><p id="create-user-status" role="status" aria-live="polite"></p></form></section>
-      <div class="admin-toolbar"><span id="enquiry-count">Loading enquiries…</span><button class="admin-refresh" id="refresh" type="button">Refresh ↻</button></div><div class="enquiry-list" id="enquiry-list"></div><p class="form-status" id="dashboard-status" role="status" aria-live="polite"></p></section>
+    <div class="admin-dashboard" id="dashboard-view" hidden>
+      <div class="admin-title"><div><p class="eyebrow"><span></span> Private workspace</p><h1>Admin workspace</h1><p>Projects, completion records, COCs, invoices, users, and company settings.</p></div><button class="button button-light" id="sign-out" type="button">Sign out</button></div>
+      <nav class="workspace-nav" aria-label="Workspace sections">
+        <button type="button" class="active" data-view="overview">Overview</button><button type="button" data-view="projects">Projects</button><button type="button" data-view="invoices">Invoices</button><button type="button" data-view="users">Users</button><button type="button" data-view="settings">Settings</button><button type="button" data-view="enquiries">Enquiries</button>
+      </nav>
+      <p class="form-status" id="dashboard-status" role="status" aria-live="polite"></p>
+      <section class="workspace-view" data-section="overview">
+        <div class="workspace-stats"><article><span>Active projects</span><strong id="stat-active">—</strong></article><article><span>Completed projects</span><strong id="stat-completed">—</strong></article><article><span>Invoices</span><strong id="stat-invoices">—</strong></article><article><span>Certificates issued</span><strong id="stat-cocs">—</strong></article></div>
+        <div class="workspace-intro"><h2>Project workspace</h2><p>Keep project status, work logs, customer assignments, contract documents, certificates, and invoice history together in one place.</p><button class="admin-refresh" type="button" data-go-view="projects">Open projects →</button></div>
+      </section>
+      <section class="workspace-view" data-section="projects" hidden>
+        <div class="section-heading"><div><p class="eyebrow"><span></span> Delivery</p><h2>Projects</h2><p>Classify work and track progress from start through completion.</p></div></div>
+        <form class="workspace-form project-create-form" id="create-project-form">
+          <h3>New project</h3><div class="form-grid">
+            <label>Project name<input name="title" maxlength="140" required placeholder="Site installation phase 1"></label>
+            <label>Client or company<input name="clientName" maxlength="140" required placeholder="Client name"></label>
+            <label>Client email<input name="clientEmail" type="email" maxlength="254" placeholder="client@company.co.za"></label>
+            <label>Category<select name="category" required><option>Electrical</option><option>Construction</option><option>General</option><option>Civil</option></select></label>
+            <label>Status<select name="status"><option>In progress</option><option>Completed</option></select></label>
+            <label>Location<input name="location" maxlength="180" placeholder="Project address or site"></label>
+            <label>Start date<input name="startDate" type="date"></label>
+            <label>Target completion<input name="targetDate" type="date"></label>
+            <label class="wide-field">Assign users<select name="assignedUsers" id="project-assignees" multiple size="4" aria-describedby="assignment-help"></select><small id="assignment-help">Select one or more existing assigned-user accounts. Hold Ctrl or Command to select multiple.</small></label>
+            <label class="wide-field">Project summary<textarea name="description" maxlength="4000" rows="3" placeholder="Scope, contract summary, and key milestones"></textarea></label>
+          </div><button class="primary-action" type="submit">Create project</button><p class="inline-status" id="project-create-status" role="status" aria-live="polite"></p>
+        </form>
+        <div class="section-toolbar"><h3>Project register</h3><button class="admin-refresh" id="refresh-projects" type="button">Refresh ↻</button></div>
+        <div class="workspace-list" id="project-list"></div>
+      </section>
+      <section class="workspace-view" data-section="invoices" hidden>
+        <div class="section-heading"><div><p class="eyebrow"><span></span> Accounts</p><h2>Invoices</h2><p>Create branded invoices, save records, and print or save them as PDF.</p></div></div>
+        <form class="workspace-form" id="create-invoice-form">
+          <h3>Create invoice</h3><div class="form-grid">
+            <label>Project<select name="projectId" id="invoice-project" required><option value="">Choose a project</option></select></label>
+            <label>Client or company<input name="clientName" maxlength="140" required></label>
+            <label>Client email<input name="clientEmail" type="email" maxlength="254"></label>
+            <label>Invoice date<input name="invoiceDate" type="date" required></label>
+            <label>Due date<input name="dueDate" type="date"></label>
+            <label>Tax rate (%)<input name="taxRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+          </div>
+          <div class="section-toolbar"><h4>Line items</h4><button class="admin-refresh" id="add-invoice-line" type="button">Add line +</button></div>
+          <div class="invoice-lines" id="invoice-lines"></div>
+          <label class="wide-field">Notes<textarea name="notes" rows="2" maxlength="2000" placeholder="Payment terms or additional information"></textarea></label>
+          <button class="primary-action" type="submit">Save draft invoice</button><p class="inline-status" id="invoice-create-status" role="status" aria-live="polite"></p>
+        </form>
+        <div class="section-toolbar"><h3>Invoice register</h3><button class="admin-refresh" id="refresh-invoices" type="button">Refresh ↻</button></div>
+        <div class="workspace-list" id="invoice-list"></div>
+      </section>
+      <section class="workspace-view" data-section="users" hidden>
+        <div class="section-heading"><div><p class="eyebrow"><span></span> Access</p><h2>Assigned users</h2><p>Create staff or client accounts, then add them to their projects.</p></div></div>
+        <section class="account-panel"><div><h3>Create assigned-user login</h3><p>Passwords must be at least 14 characters. Share them with users privately.</p></div><form id="create-user-form"><label>Email address<input name="email" type="email" maxlength="254" autocomplete="off" required placeholder="person@company.com"></label><label>Temporary password<input name="password" type="password" minlength="14" maxlength="256" autocomplete="new-password" required placeholder="At least 14 characters"></label><button class="primary-action" type="submit">Create assigned user</button><p id="create-user-status" role="status" aria-live="polite"></p></form></section>
+        <div class="section-toolbar"><h3>Accounts</h3><button class="admin-refresh" id="refresh-users" type="button">Refresh ↻</button></div><div class="workspace-list" id="user-list"></div>
+      </section>
+      <section class="workspace-view" data-section="settings" hidden>
+        <div class="section-heading"><div><p class="eyebrow"><span></span> Company</p><h2>Settings</h2><p>Company details and logo are used on generated invoices.</p></div></div>
+        <form class="workspace-form" id="settings-form"><h3>Company invoice details</h3><div class="form-grid">
+          <label>Company name<input name="companyName" maxlength="180" required></label><label>Company email<input name="email" type="email" maxlength="180" required></label>
+          <label>Phone<input name="phone" maxlength="180"></label><label>Invoice number prefix<input name="invoicePrefix" maxlength="12"></label>
+          <label>VAT number<input name="vatNumber" maxlength="180"></label><label class="wide-field">Address<textarea name="address" maxlength="300" rows="2"></textarea></label>
+        </div><div class="logo-control"><div><h4>Company logo</h4><p>Upload a PNG, JPEG, or WebP image up to 7 MB.</p><img id="company-logo-preview" alt="Company logo preview" hidden></div><label>Choose logo<input id="company-logo-file" type="file" accept="image/png,image/jpeg,image/webp"></label><button class="secondary-action" id="upload-company-logo" type="button">Upload logo</button></div><button class="primary-action" type="submit">Save company settings</button><p class="inline-status" id="settings-status" role="status" aria-live="polite"></p></form>
+      </section>
+      <section class="workspace-view" data-section="enquiries" hidden>
+        <div class="section-heading"><div><p class="eyebrow"><span></span> Website</p><h2>Enquiries</h2><p>Review messages received from the public website.</p></div><button class="admin-refresh" id="refresh-enquiries" type="button">Refresh ↻</button></div>
+        <div class="workspace-list" id="enquiry-list"></div>
+      </section>
+    </div>
   </main>
 </body>
 </html>
-

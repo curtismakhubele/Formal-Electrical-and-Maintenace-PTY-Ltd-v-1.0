@@ -16,4 +16,8 @@ The setup password is sent directly over HTTPS to this App Service and stored as
 
 ## Scope
 
-The admin workspace currently supports enquiries and assigned-user account creation. Project tracking, COC certificate records, invoice creation/storage, and company settings still need their application data models and screens.
+The admin workspace includes project tracking for Construction, Electrical, General, and Civil work; assignment to existing user accounts; in-progress and completed statuses; dated work records; COC issue records; private project and certificate files; invoice drafting and status tracking; company details and logo settings; assigned-user account creation; and website enquiries. Assigned users can view their projects, work records, certificates, documents, and related invoices in the client workspace.
+
+Project files, COC PDFs, company logo, invoice records, project records, account hashes, and enquiries are stored under `DATA_DIR` on the App Service persistent path. Uploaded documents are limited to 7 MB; project files accept PDF, PNG, JPEG, and WebP, COC attachments accept PDF, and logos accept PNG, JPEG, and WebP. Invoice drafts are stored as structured records and can be printed or saved as PDF from the admin or client workspace.
+
+Create the first live administrator from `/setup.html` after the Azure deployment is available. Use a new password of at least 14 characters; the password is hashed before storage. The setup token must be present in App Service settings only during initial setup, then removed. Use the admin workspace to create assigned-user accounts and assign them to projects.
