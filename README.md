@@ -8,7 +8,7 @@ Install Node.js 20 or newer. Run `npm run create-user` to create a local adminis
 
 ## Azure App Service deployment
 
-The workflow in `.github/workflows/deploy-azure.yml` packages the Node app and deploys it to the existing Linux App Service `formal-electrical-and-maintenace` when run manually or after a push to `main`. It requires the GitHub Actions repository secret `AZURE_WEBAPP_PUBLISH_PROFILE`. If that secret is absent, the workflow safely skips its deploy step.
+The workflow in `.github/workflows/deploy-azure.yml` packages the Node app and deploys it to the existing Linux App Service `formal-electrical-and-maintenace` when run manually or after a push to `main`. It uses GitHub OIDC federation with an Azure user-assigned managed identity scoped to this Web App; no publish-profile secret is needed.
 
 For persistent account and enquiry files, set the App Service setting `DATA_DIR` to `/home/formal-em-data`. Set `ADMIN_SETUP_TOKEN` to a long random one-time value, then open `/setup.html` on the deployed site to create the first administrator. Once setup succeeds, remove `ADMIN_SETUP_TOKEN` from App Service settings. The setup route is disabled when the token is absent and permanently closes after the first account is created.
 

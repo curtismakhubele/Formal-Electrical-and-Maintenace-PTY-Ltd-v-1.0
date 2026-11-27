@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: azure-app-service-production
@@ -27,23 +28,16 @@ jobs:
           cp package.json server.js index.html styles.css app.js icon.svg manifest.webmanifest privacy.html admin.html admin.css admin-users.css auth-nav.css admin.js login.html login.css login.js portal.html portal.css portal.js setup.html setup.js publish/
           cp assets/worker-hero.jpg assets/company-building.jpg publish/assets/
 
-      - name: Check Azure deployment secret
-        id: deployment_secret
-        shell: bash
-        env:
-          PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        run: |
-          if [[ -n "$PUBLISH_PROFILE" ]]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Deployment skipped. Add AZURE_WEBAPP_PUBLISH_PROFILE to repository Actions secrets to enable deploys."
-          fi
+      - name: Sign in to Azure with workload identity
+        uses: azure/login@v2
+        with:
+          client-id: c275acb8-a449-4a3f-abb6-7fa2b92cd04f
+          tenant-id: ca9a8b8c-3ea3-4799-a43e-5510398e7a3b
+          subscription-id: 673e191b-c929-489b-9843-81abef0b119e
 
       - name: Deploy to Azure Web App
         if: steps.deployment_secret.outputs.configured == 'true'
         uses: azure/webapps-deploy@v3
         with:
           app-name: formal-electrical-and-maintenace
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: publish
