@@ -1,0 +1,17 @@
+{
+  "name": "Formal Electrical and Maintenance",
+  "short_name": "Formal E&M",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10243a",
+  "theme_color": "#10243a",
+  "description": "Company website and business workspace",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
