@@ -498,6 +498,21 @@ document.querySelector('#settings-form').addEventListener('submit', async (event
   } catch (error) { setStatus(status, error.message, true); }
 });
 
+document.querySelector('#password-change-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const status = document.querySelector('#password-change-status');
+  if (form.elements.newPassword.value !== form.elements.confirmPassword.value) {
+    setStatus(status, 'The new passwords do not match.', true);
+    return;
+  }
+  try {
+    await api('/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: form.elements.currentPassword.value, newPassword: form.elements.newPassword.value }) });
+    form.reset();
+    setStatus(status, 'Administrator password changed. Keep the new password private.');
+  } catch (error) { setStatus(status, error.message, true); }
+});
+
 document.querySelector('#upload-company-logo').addEventListener('click', async () => {
   const file = document.querySelector('#company-logo-file').files[0];
   const status = document.querySelector('#settings-status');

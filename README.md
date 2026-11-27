@@ -10,7 +10,7 @@ Install Node.js 20 or newer. Run `npm run create-user` to create a local adminis
 
 The workflow in `.github/workflows/deploy-azure.yml` packages the Node app and deploys it to the existing Linux App Service `formal-electrical-and-maintenace` when run manually or after a push to `main`. It uses GitHub OIDC federation with an Azure user-assigned managed identity scoped to this Web App; no publish-profile secret is needed.
 
-For persistent account and enquiry files, set the App Service setting `DATA_DIR` to `/home/formal-em-data`. Set `ADMIN_SETUP_TOKEN` to a long random one-time value, then open `/setup.html` on the deployed site to create the first administrator. Once setup succeeds, remove `ADMIN_SETUP_TOKEN` from App Service settings. The setup route is disabled when the token is absent and permanently closes after the first account is created.
+For persistent account and enquiry files, set the App Service setting `DATA_DIR` to `/home/formal-em-data`. To use Azure settings for first sign-in, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` (at least 14 characters). The first successful admin sign-in hashes and saves that credential in `DATA_DIR`; this is a one-time bootstrap and does not replace a different administrator account. Remove `ADMIN_PASSWORD` from App Service settings after first sign-in. Alternatively, create the first admin with `/setup.html` and a long random `ADMIN_SETUP_TOKEN`; remove that token after setup succeeds. The setup route is disabled when the token is absent and closes after the first account is created.
 
 The setup password is sent directly over HTTPS to this App Service and stored as a salted scrypt hash. Do not put administrator passwords or user data in GitHub or the repository. The initial account is created in the Azure `DATA_DIR`; local `data/` is not deployed.
 
@@ -20,4 +20,4 @@ The admin workspace includes project tracking for Construction, Electrical, Gene
 
 Project files, COC PDFs, company logo, invoice records, project records, account hashes, and enquiries are stored under `DATA_DIR` on the App Service persistent path. Uploaded documents are limited to 7 MB; project files accept PDF, PNG, JPEG, and WebP, COC attachments accept PDF, and logos accept PNG, JPEG, and WebP. Invoice drafts are stored as structured records and can be printed or saved as PDF from the admin or client workspace.
 
-Create the first live administrator from `/setup.html` after the Azure deployment is available. Use a new password of at least 14 characters; the password is hashed before storage. The setup token must be present in App Service settings only during initial setup, then removed. Use the admin workspace to create assigned-user accounts and assign them to projects.
+After signing in, change the bootstrap password from Admin workspace → Settings → Change administrator password. Passwords are hashed with scrypt before storage. Use the admin workspace to create assigned-user accounts and assign them to projects.

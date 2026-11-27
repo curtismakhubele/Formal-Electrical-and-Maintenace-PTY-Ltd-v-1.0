@@ -105,6 +105,72 @@ async function loadAccounts() {
   }
 }
 
+async function saveAccounts(accounts) {
+  await fs.promises.mkdir(dataDir, { recursive: true, mode: 0o700 });
+  const temporaryPath = `${authUsersPath}.${crypto.randomBytes(8).toString('hex')}.tmp`;
+  try {
+    await fs.promises.writeFile(temporaryPath, `${JSON.stringify({ accounts }, null, 2)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    await fs.promises.rename(temporaryPath, authUsersPath);
+  } catch (error) {
+    await fs.promises.rm(temporaryPath, { force: true }).catch(() => {});
+    throw error;
+  }
+}
+
+async function provisionConfiguredAdmin(email, password) {
+  const configuredEmail = typeof process.env.ADMIN_EMAIL === 'string' ? process.env.ADMIN_EMAIL.trim().toLowerCase() : '';
+  const configuredPassword = typeof process.env.ADMIN_PASSWORD === 'string' ? process.env.ADMIN_PASSWORD : '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredEmail) || configuredEmail !== email || configuredPassword.length < 14 || configuredPassword.length > 256) return false;
+  const provided = Buffer.from(password);
+  const expected = Buffer.from(configuredPassword);
+  if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) return false;
+  const operation = accountWriteQueue.then(async () => {
+    const accounts = await loadAccounts();
+    const configuredAccount = accounts.find((account) => account.email === configuredEmail);
+    if (accounts.some((account) => account.role === 'admin' && account.email !== configuredEmail) || configuredAccount?.envBootstrapUsedAt) return false;
+    const salt = crypto.randomBytes(16);
+    const hash = crypto.scryptSync(configuredPassword, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 128 * 1024 * 1024 });
+    const now = new Date().toISOString();
+    if (configuredAccount) Object.assign(configuredAccount, { role: 'admin', salt: salt.toString('hex'), hash: hash.toString('hex'), envBootstrapUsedAt: now });
+    else accounts.push({ email: configuredEmail, role: 'admin', salt: salt.toString('hex'), hash: hash.toString('hex'), createdAt: now, envBootstrapUsedAt: now });
+    await saveAccounts(accounts);
+    return true;
+  });
+  accountWriteQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function changeAccountPassword(req, res) {
+  if (!sameOrigin(req)) return sendJson(res, 403, { error: 'Password request was rejected.' });
+  const user = sessionUser(req);
+  if (!user) return sendJson(res, 401, { error: 'Sign in to continue.' });
+  let input;
+  try { input = await readJson(req); } catch { return sendJson(res, 400, { error: 'Enter your current and new passwords.' }); }
+  if (typeof input?.currentPassword !== 'string' || typeof input.newPassword !== 'string' || input.newPassword.length < 14 || input.newPassword.length > 256) {
+    return sendJson(res, 400, { error: 'Enter your current password and choose a new password of at least 14 characters.' });
+  }
+  const operation = accountWriteQueue.then(async () => {
+    const accounts = await loadAccounts();
+    const account = accounts.find((item) => item.email === user.email && item.role === user.role);
+    if (!account || !verifyPassword(input.currentPassword, account)) return { invalid: true };
+    const salt = crypto.randomBytes(16);
+    const hash = crypto.scryptSync(input.newPassword, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 128 * 1024 * 1024 });
+    account.salt = salt.toString('hex');
+    account.hash = hash.toString('hex');
+    account.updatedAt = new Date().toISOString();
+    await saveAccounts(accounts);
+    return { changed: true };
+  });
+  accountWriteQueue = operation.catch(() => {});
+  try {
+    const result = await operation;
+    if (result.invalid) return sendJson(res, 401, { error: 'Your current password is incorrect.' });
+    for (const [token, session] of sessions) if (session.user.email === user.email) sessions.delete(token);
+    startSession(res, user);
+    return sendJson(res, 200, { message: 'Password changed. You are still signed in.' });
+  } catch { return sendJson(res, 503, { error: 'The password could not be updated.' }); }
+}
+
 async function loadStore(name, fallback) {
   const filePath = storePaths[name];
   if (!filePath) throw new Error('Unknown private data store.');
@@ -675,7 +741,14 @@ async function login(req, res) {
   let account;
   try { account = (await loadAccounts()).find((item) => item.email === email); }
   catch { return sendJson(res, 503, { error: 'Sign-in is temporarily unavailable.' }); }
-  const verified = account && account.role === requestedRole && verifyPassword(password, account);
+  let verified = account && account.role === requestedRole && verifyPassword(password, account);
+  if (!verified && requestedRole === 'admin') {
+    try {
+      await provisionConfiguredAdmin(email, password);
+      account = (await loadAccounts()).find((item) => item.email === email);
+      verified = account && account.role === 'admin' && verifyPassword(password, account);
+    } catch { return sendJson(res, 503, { error: 'Sign-in is temporarily unavailable.' }); }
+  }
   if (!verified) {
     noteLoginAttempt(req, false);
     return sendJson(res, 401, { error: 'Email, password or account type is incorrect.' });
@@ -809,6 +882,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && fileMatch) return void servePrivateFile(req, res, fileMatch[1], new URL(req.url, 'http://localhost').searchParams.get('inline') === '1');
   if (req.method === 'POST' && pathname === '/api/auth/setup') return void createInitialAdmin(req, res);
   if (req.method === 'POST' && pathname === '/api/auth/login') return void login(req, res);
+  if (req.method === 'POST' && pathname === '/api/auth/password') return void changeAccountPassword(req, res);
   if (req.method === 'GET' && pathname === '/api/auth/me') {
     const user = sessionUser(req);
     return user ? sendJson(res, 200, { user }) : sendJson(res, 401, { error: 'Sign in to continue.' });
