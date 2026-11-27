@@ -36,7 +36,6 @@ jobs:
           subscription-id: 673e191b-c929-489b-9843-81abef0b119e
 
       - name: Deploy to Azure Web App
-        if: steps.deployment_secret.outputs.configured == 'true'
         uses: azure/webapps-deploy@v3
         with:
           app-name: formal-electrical-and-maintenace
