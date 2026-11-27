@@ -24,6 +24,7 @@ function renderSiteContent(site) {
   setText('footer-company-name', site.companyName);
   const logo = document.querySelector('#brand-logo'); if (logo && site.logoUrl) logo.src = site.logoUrl + '?v=' + encodeURIComponent(site.hasUploadedLogo ? 'company' : 'default');
   if (logo) logo.alt = (site.companyName || 'Company') + ' logo';
+  document.body.classList.toggle('has-uploaded-logo', Boolean(site.hasUploadedLogo));
   document.querySelectorAll('[data-site-nav]').forEach((node) => { const label = site.nav?.[node.dataset.siteNav]; if (label) node.textContent = label; });
   const hero = site.hero || {};
   for (const [id, value] of [['hero-title', hero.title], ['hero-tagline', hero.tagline], ['hero-intro', hero.intro], ['hero-primary-label', hero.primaryLabel], ['hero-secondary-label', hero.secondaryLabel]]) setText(id, value);
