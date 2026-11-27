@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir -p publish/assets
           cp package.json server.js index.html styles.css app.js icon.svg manifest.webmanifest privacy.html admin.html admin.css admin-users.css auth-nav.css admin.js login.html login.css login.js portal.html portal.css portal.js setup.html setup.js publish/
-          cp assets/worker-hero.jpg assets/company-building.jpg publish/assets/
+          cp assets/worker-hero.jpg assets/company-building.jpg assets/formal-logo.svg publish/assets/
 
       - name: Sign in to Azure with workload identity
         uses: azure/login@v2

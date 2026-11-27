@@ -306,7 +306,7 @@ function escapeHtml(value) {
 function printInvoice(invoice) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) { setStatus(dashboardStatus, 'Allow the invoice window to open, then choose Print or Save as PDF.', true); return; }
-  const logo = companySettings.logo?.id ? '<img class="logo" src="/api/files/' + encodeURIComponent(companySettings.logo.id) + '?inline=1" alt="Company logo">' : '';
+  const logo = '<img class="logo" src="/api/brand-logo" alt="Company logo">';
   const itemRows = invoice.items.map((item) => '<tr><td>' + escapeHtml(item.description) + '</td><td>' + escapeHtml(item.quantity) + '</td><td>' + escapeHtml(money(item.unitPrice)) + '</td><td>' + escapeHtml(money(item.lineTotal)) + '</td></tr>').join('');
   printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + escapeHtml(invoice.invoiceNumber) + '</title><style>body{font:14px Arial,sans-serif;color:#172640;margin:48px}header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #102a3a;padding-bottom:20px}h1,h2,p{margin:0 0 10px}h1{font-size:30px}.logo{max-width:150px;max-height:80px;object-fit:contain}.meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:28px 0}table{width:100%;border-collapse:collapse;margin:24px 0}th,td{text-align:left;padding:11px;border-bottom:1px solid #d8dfe5}th{background:#f1f4f6}.totals{margin-left:auto;width:280px}.totals p{display:flex;justify-content:space-between}.total{font-weight:bold;font-size:18px;border-top:2px solid #102a3a;padding-top:12px}.notes{margin-top:30px;white-space:pre-wrap}@media print{body{margin:20mm}}</style></head><body><header><div>' + logo + '<h2>' + escapeHtml(companySettings.companyName) + '</h2><p>' + escapeHtml(companySettings.address) + '</p><p>' + escapeHtml(companySettings.email) + ' · ' + escapeHtml(companySettings.phone) + '</p>' + (companySettings.vatNumber ? '<p>VAT: ' + escapeHtml(companySettings.vatNumber) + '</p>' : '') + '</div><div><h1>INVOICE</h1><p><strong>' + escapeHtml(invoice.invoiceNumber) + '</strong></p><p>Status: ' + escapeHtml(invoice.status) + '</p></div></header><div class="meta"><div><h2>Bill to</h2><p>' + escapeHtml(invoice.clientName) + '</p><p>' + escapeHtml(invoice.clientEmail) + '</p></div><div><h2>Project</h2><p>' + escapeHtml(invoice.projectReference) + ' · ' + escapeHtml(invoice.projectTitle) + '</p><p>Invoice date: ' + escapeHtml(formatDate(invoice.invoiceDate)) + '</p><p>Due date: ' + escapeHtml(formatDate(invoice.dueDate)) + '</p></div></div><table><thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead><tbody>' + itemRows + '</tbody></table><div class="totals"><p><span>Subtotal</span><strong>' + escapeHtml(money(invoice.subtotal)) + '</strong></p><p><span>Tax (' + escapeHtml(invoice.taxRate) + '%)</span><strong>' + escapeHtml(money(invoice.tax)) + '</strong></p><p class="total"><span>Total due</span><strong>' + escapeHtml(money(invoice.total)) + '</strong></p></div>' + (invoice.notes ? '<div class="notes"><strong>Notes</strong><p>' + escapeHtml(invoice.notes) + '</p></div>' : '') + '</body></html>');
   printWindow.document.close();
@@ -380,12 +380,38 @@ async function loadSettings() {
   const form = document.querySelector('#settings-form');
   for (const key of ['companyName', 'address', 'email', 'phone', 'vatNumber', 'invoicePrefix']) form.elements[key].value = companySettings[key] || '';
   if (companySettings.logo?.id) {
-    companyLogoPreview.src = '/api/files/' + encodeURIComponent(companySettings.logo.id) + '?inline=1';
+    companyLogoPreview.src = '/api/brand-logo?v=' + Date.now();
     companyLogoPreview.hidden = false;
   } else {
-    companyLogoPreview.removeAttribute('src');
-    companyLogoPreview.hidden = true;
+    companyLogoPreview.src = '/api/brand-logo';
+    companyLogoPreview.hidden = false;
   }
+}
+
+function listText(items, withDescription) {
+  return (items || []).map((item) => [item.icon, item.title, ...(withDescription ? [item.description] : [])].filter(Boolean).join(' | ')).join('\n');
+}
+
+async function loadSiteContent() {
+  const { site } = await api('/api/admin/site-content');
+  const form = document.querySelector('#site-content-form');
+  const set = (name, value) => { form.elements[name].value = value ?? ''; };
+  for (const key of ['companyName', 'phone', 'email', 'address', 'pageTitle', 'metaDescription', 'footerText']) set(key, site[key]);
+  for (const key of ['navy', 'blue', 'gold']) set(key, site.theme[key]);
+  for (const key of ['home', 'about', 'services', 'projects', 'safety', 'contact']) set('nav' + key[0].toUpperCase() + key.slice(1), site.nav[key]);
+  for (const [formKey, siteKey] of [['heroTitle', 'title'], ['heroTagline', 'tagline'], ['heroPrimary', 'primaryLabel'], ['heroSecondary', 'secondaryLabel'], ['heroIntro', 'intro'], ['heroImageAlt', 'imageAlt']]) set(formKey, site.hero[siteKey]);
+  for (const [formKey, siteKey] of [['aboutEyebrow', 'eyebrow'], ['aboutTitle', 'title'], ['aboutBody', 'body'], ['aboutButton', 'buttonLabel'], ['aboutImageAlt', 'imageAlt']]) set(formKey, site.about[siteKey]);
+  for (const [formKey, siteKey] of [['contactEyebrow', 'eyebrow'], ['contactTitle', 'title'], ['contactIntro', 'intro'], ['contactButton', 'buttonLabel']]) set(formKey, site.contact[siteKey]);
+  set('services', listText(site.services, false)); set('values', listText(site.values, true)); set('benefits', listText(site.benefits, true));
+  for (const key of ['facebook', 'linkedin', 'youtube']) set(key, site.social[key]);
+  for (const key of ['services', 'about', 'safety', 'projects', 'contact']) form.elements['show' + key[0].toUpperCase() + key.slice(1)].checked = site.sections[key] !== false;
+}
+
+function parseEditorLines(value, columns) {
+  return value.split(/\r?\n/).map((line) => line.split('|').map((part) => part.trim())).filter((parts) => parts.some(Boolean)).map((parts) => {
+    if (parts.length < columns || parts.slice(0, columns).some((part) => !part)) throw new Error('Complete every field on each service, value, and benefit line, separated with |.');
+    return columns === 2 ? { icon: parts[0], title: parts.slice(1).join(' | ') } : { icon: parts[0], title: parts[1], description: parts.slice(2).join(' | ') };
+  });
 }
 
 async function loadEnquiries() {
@@ -399,6 +425,7 @@ async function loadWorkspace() {
     await loadProjects();
     await loadInvoices();
     await loadSettings();
+    await loadSiteContent();
     await loadEnquiries();
   } catch (error) { setStatus(dashboardStatus, error.message || 'Some workspace data could not be loaded.', true); }
   updateOverview();
@@ -498,6 +525,30 @@ document.querySelector('#settings-form').addEventListener('submit', async (event
   } catch (error) { setStatus(status, error.message, true); }
 });
 
+document.querySelector('#site-content-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const v = Object.fromEntries(new FormData(form));
+  const status = document.querySelector('#site-content-status');
+  const mapLines = (name, cols) => parseEditorLines(v[name] || '', cols);
+  try {
+    const content = {
+      companyName: v.companyName, phone: v.phone, email: v.email, address: v.address, pageTitle: v.pageTitle, metaDescription: v.metaDescription,
+      theme: { navy: v.navy, blue: v.blue, gold: v.gold },
+      nav: { home: v.navHome, about: v.navAbout, services: v.navServices, projects: v.navProjects, safety: v.navSafety, contact: v.navContact },
+      hero: { title: v.heroTitle, tagline: v.heroTagline, primaryLabel: v.heroPrimary, secondaryLabel: v.heroSecondary, intro: v.heroIntro, imageAlt: v.heroImageAlt },
+      services: mapLines('services', 2),
+      about: { eyebrow: v.aboutEyebrow, title: v.aboutTitle, body: v.aboutBody, buttonLabel: v.aboutButton, imageAlt: v.aboutImageAlt },
+      values: mapLines('values', 3), benefits: mapLines('benefits', 3),
+      contact: { eyebrow: v.contactEyebrow, title: v.contactTitle, intro: v.contactIntro, buttonLabel: v.contactButton },
+      social: { facebook: v.facebook, linkedin: v.linkedin, youtube: v.youtube },
+      sections: Object.fromEntries(['services', 'about', 'safety', 'projects', 'contact'].map((key) => [key, form.elements['show' + key[0].toUpperCase() + key.slice(1)].checked])), footerText: v.footerText
+    };
+    const result = await api('/api/admin/site-content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(content) });
+    setStatus(status, 'Website changes saved. Refresh the public site to see them.');
+  } catch (error) { setStatus(status, error.message || 'Website changes could not be saved.', true); }
+});
+
 document.querySelector('#password-change-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
@@ -520,7 +571,7 @@ document.querySelector('#upload-company-logo').addEventListener('click', async (
   try {
     const data = await api('/api/admin/settings/logo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ file: await filePayload(file) }) });
     companySettings = data.settings;
-    companyLogoPreview.src = '/api/files/' + encodeURIComponent(data.logo.id) + '?inline=1';
+    companyLogoPreview.src = '/api/brand-logo?v=' + Date.now();
     companyLogoPreview.hidden = false;
     setStatus(status, 'Company logo uploaded.');
   } catch (error) { setStatus(status, error.message, true); }

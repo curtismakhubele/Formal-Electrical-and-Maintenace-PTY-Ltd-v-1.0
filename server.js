@@ -22,18 +22,49 @@ const documentDir = path.join(dataDir, 'documents');
 const storePaths = {
   projects: path.join(dataDir, 'projects.json'),
   invoices: path.join(dataDir, 'invoices.json'),
-  settings: path.join(dataDir, 'company-settings.json')
+  settings: path.join(dataDir, 'company-settings.json'),
+  siteContent: path.join(dataDir, 'site-content.json')
 };
 const projectCategories = new Set(['Construction', 'Electrical', 'General', 'Civil']);
 const projectStatuses = new Set(['In progress', 'Completed']);
 const defaultCompanySettings = {
   companyName: 'Formal Electrical and Maintenance (Pty) Ltd',
   address: '4 S P Kwakwa St, Saulsville, Pretoria, 0125, South Africa',
-  email: 'info@formalelectrical.co.za',
-  phone: '+27 12 345 6900',
+  email: 'formalelectrical@outlook.com',
+  phone: '+27 63 411 6900',
   vatNumber: '',
   invoicePrefix: 'FEM',
   logo: null
+};
+const defaultSiteContent = {
+  companyName: 'Formal Electrical and Maintenance (Pty) Ltd',
+  phone: '+27 63 411 6900',
+  email: 'formalelectrical@outlook.com',
+  address: '4 S P Kwakwa St, Saulsville, Pretoria, 0125, South Africa',
+  pageTitle: 'Formal Electrical & Maintenance | We Create Light Power for You',
+  metaDescription: 'Formal Electrical and Maintenance (Pty) Ltd delivers electrical, construction, project management and property maintenance services across South Africa.',
+  theme: { navy: '#062654', blue: '#075ca7', gold: '#f4ad13' },
+  nav: { home: 'Home', about: 'About Us', services: 'Our Services', projects: 'Projects', safety: 'Health & Safety', contact: 'Contact Us' },
+  hero: { title: 'Formal Electrical and Maintenance (Pty) Ltd', tagline: 'We Create Light Power for You', intro: 'Delivering high-quality electrical and maintenance services with innovation, safety and excellence.', primaryLabel: 'Our Services', secondaryLabel: 'Contact Us', imageAlt: 'Electrical technician working safely at an industrial control panel' },
+  services: [
+    { icon: '♟', title: 'Construction Management' }, { icon: '▣', title: 'Project Management' },
+    { icon: '⚡', title: 'Electrical Installation & Repairs' }, { icon: '⚒', title: 'Maintenance & Certificates of Compliance (COCs)' },
+    { icon: '⌂', title: 'Renovation & Building' }, { icon: '♣', title: 'Plumbing Services & Water Purifier Solutions' },
+    { icon: '♧', title: 'Cleaning & Horticulture' }, { icon: '⚙', title: 'Project Innovation & Technology Solutions' }
+  ],
+  about: { eyebrow: 'About Us', title: 'Who We Are', body: 'Formal Electrical and Maintenance (Pty) Ltd was established in 2019 with the vision of providing high-quality electrical and maintenance services to clients across various sectors. Our commitment is to deliver excellence, safety and efficiency in every project.', buttonLabel: 'Learn More', imageAlt: 'Modern Formal Electrical and Maintenance office building' },
+  values: [
+    { icon: '♢', title: 'Safety First', description: 'Our top priority' }, { icon: '✹', title: 'Quality Assured', description: 'Certified standards' },
+    { icon: '♟', title: 'Expert Team', description: 'Skilled professionals' }, { icon: '♧', title: 'Client Focused', description: 'Tailored solutions' }
+  ],
+  benefits: [
+    { icon: '♧', title: '24/7 Support', description: 'Always here to help' }, { icon: '♜', title: 'Trusted & Reliable', description: 'Building long-term partnerships' },
+    { icon: '◒', title: 'Sustainable Solutions', description: 'For a greener tomorrow' }, { icon: '●', title: 'Coverage', description: 'Across South Africa' }
+  ],
+  contact: { eyebrow: 'Contact Us', title: 'Let’s power your next project.', intro: 'Tell us what you need and our team will be in touch.', buttonLabel: 'Email our team' },
+  social: { facebook: '', linkedin: '', youtube: '' },
+  sections: { services: true, about: true, safety: true, projects: true, contact: true },
+  footerText: 'All Rights Reserved.'
 };
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -52,7 +83,7 @@ const staticFiles = new Map([
   ['/login.html', 'login.html'], ['/login.css', 'login.css'], ['/login.js', 'login.js'],
   ['/portal.html', 'portal.html'], ['/portal.css', 'portal.css'], ['/portal.js', 'portal.js'],
   ['/setup.html', 'setup.html'], ['/setup.js', 'setup.js'],
-  ['/assets/worker-hero.jpg', 'assets/worker-hero.jpg'], ['/assets/company-building.jpg', 'assets/company-building.jpg']
+  ['/assets/worker-hero.jpg', 'assets/worker-hero.jpg'], ['/assets/company-building.jpg', 'assets/company-building.jpg'], ['/assets/formal-logo.svg', 'assets/formal-logo.svg']
 ]);
 
 function parseCookies(req) {
@@ -253,6 +284,120 @@ function adminSession(req, res) {
   if (!user) { sendJson(res, 401, { error: 'Sign in to continue.' }); return null; }
   if (user.role !== 'admin') { sendJson(res, 403, { error: 'Administrator access is required.' }); return null; }
   return user;
+}
+
+function siteContentWithDefaults(saved = {}) {
+  return {
+    ...defaultSiteContent,
+    ...saved,
+    theme: { ...defaultSiteContent.theme, ...(saved.theme || {}) },
+    nav: { ...defaultSiteContent.nav, ...(saved.nav || {}) },
+    hero: { ...defaultSiteContent.hero, ...(saved.hero || {}) },
+    about: { ...defaultSiteContent.about, ...(saved.about || {}) },
+    contact: { ...defaultSiteContent.contact, ...(saved.contact || {}) },
+    social: { ...defaultSiteContent.social, ...(saved.social || {}) },
+    sections: { ...defaultSiteContent.sections, ...(saved.sections || {}) },
+    services: Array.isArray(saved.services) ? saved.services : defaultSiteContent.services,
+    values: Array.isArray(saved.values) ? saved.values : defaultSiteContent.values,
+    benefits: Array.isArray(saved.benefits) ? saved.benefits : defaultSiteContent.benefits
+  };
+}
+
+function boundedText(value, fallback, limit) {
+  return typeof value === 'string' ? value.trim().slice(0, limit) : fallback;
+}
+
+function safeWebsiteUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  try {
+    const url = new URL(value.trim());
+    return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.toString() : null;
+  } catch { return null; }
+}
+
+async function getSiteContent(req, res, adminOnly = false) {
+  if (adminOnly && !adminSession(req, res)) return;
+  try {
+    const site = siteContentWithDefaults(await loadStore('siteContent', {}));
+    const settings = { ...defaultCompanySettings, ...(await loadStore('settings', defaultCompanySettings)) };
+    return sendJson(res, 200, { site: { ...site, logoUrl: '/api/brand-logo', hasUploadedLogo: Boolean(settings.logo?.id) } });
+  } catch { return sendJson(res, 503, { error: 'Website content could not be loaded.' }); }
+}
+
+async function serveBrandLogo(req, res) {
+  try {
+    const settings = { ...defaultCompanySettings, ...(await loadStore('settings', defaultCompanySettings)) };
+    let content;
+    let type;
+    if (settings.logo?.id && ['image/png', 'image/jpeg', 'image/webp'].includes(settings.logo.type)) {
+      content = await fs.promises.readFile(path.join(documentDir, settings.logo.id + storedExtension(settings.logo.type)));
+      type = settings.logo.type;
+    } else {
+      content = await fs.promises.readFile(path.join(root, 'assets', 'formal-logo.svg'));
+      type = 'image/svg+xml';
+    }
+    res.writeHead(200, {
+      'Content-Type': type, 'Content-Length': content.length, 'Cache-Control': 'public, max-age=300',
+      'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox"
+    });
+    return res.end(content);
+  } catch { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Logo not available.'); }
+}
+
+async function saveSiteContent(req, res) {
+  if (!sameOrigin(req)) return sendJson(res, 403, { error: 'Website content request was rejected.' });
+  if (!adminSession(req, res)) return;
+  let input;
+  try { input = await readJson(req); } catch { return sendJson(res, 400, { error: 'Enter valid website content.' }); }
+  const validEmail = typeof input?.email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim()) && input.email.length <= 254;
+  const validColour = (value) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+  const sections = input?.sections || {};
+  const nav = input?.nav || {};
+  const hero = input?.hero || {};
+  const about = input?.about || {};
+  const contact = input?.contact || {};
+  const social = input?.social || {};
+  const theme = input?.theme || {};
+  const limits = { services: 12, values: 8, benefits: 8 };
+  const lists = {};
+  for (const name of Object.keys(limits)) {
+    if (!Array.isArray(input?.[name]) || input[name].length < 1 || input[name].length > limits[name]) return sendJson(res, 400, { error: `Add between 1 and ${limits[name]} ${name}.` });
+    lists[name] = input[name].map((row) => ({
+      icon: boundedText(row?.icon, '✦', 8),
+      ...(name === 'services' ? { title: boundedText(row?.title, '', 120) } : { title: boundedText(row?.title, '', 80), description: boundedText(row?.description, '', 180) })
+    }));
+    if (lists[name].some((row) => !row.title || (row.description !== undefined && !row.description))) return sendJson(res, 400, { error: `Check the ${name} entries; each needs a title${name === 'services' ? '' : ' and description'}.` });
+  }
+  const socialUrls = {};
+  for (const name of ['facebook', 'linkedin', 'youtube']) {
+    socialUrls[name] = safeWebsiteUrl(social[name]);
+    if (socialUrls[name] === null) return sendJson(res, 400, { error: 'Social links must be valid http or https URLs.' });
+  }
+  if (!validEmail || !boundedText(input.companyName, '', 180) || !boundedText(input.phone, '', 60) || !boundedText(input.address, '', 300)) return sendJson(res, 400, { error: 'Add the company name, phone, address, and a valid contact email.' });
+  if (!validColour(theme.navy) || !validColour(theme.blue) || !validColour(theme.gold)) return sendJson(res, 400, { error: 'Choose valid six-digit hex colors for the website palette.' });
+  const requiredText = [nav.home, nav.about, nav.services, nav.projects, nav.safety, nav.contact, hero.title, hero.tagline, hero.intro, hero.primaryLabel, hero.secondaryLabel, about.eyebrow, about.title, about.body, about.buttonLabel, contact.eyebrow, contact.title, contact.intro, contact.buttonLabel];
+  if (requiredText.some((value) => typeof value !== 'string' || !value.trim())) return sendJson(res, 400, { error: 'Fill in all navigation, hero, about, and contact text fields.' });
+  const site = {
+    ...defaultSiteContent,
+    companyName: input.companyName.trim().slice(0, 180), phone: input.phone.trim().slice(0, 60), email: input.email.trim().toLowerCase(), address: input.address.trim().slice(0, 300),
+    pageTitle: boundedText(input.pageTitle, defaultSiteContent.pageTitle, 180),
+    metaDescription: boundedText(input.metaDescription, defaultSiteContent.metaDescription, 320),
+    theme: { navy: theme.navy, blue: theme.blue, gold: theme.gold },
+    nav: Object.fromEntries(['home', 'about', 'services', 'projects', 'safety', 'contact'].map((key) => [key, nav[key].trim().slice(0, 60)])),
+    hero: Object.fromEntries(['title', 'tagline', 'intro', 'primaryLabel', 'secondaryLabel', 'imageAlt'].map((key) => [key, boundedText(hero[key], defaultSiteContent.hero[key], key === 'intro' ? 500 : 180)])),
+    about: Object.fromEntries(['eyebrow', 'title', 'body', 'buttonLabel', 'imageAlt'].map((key) => [key, boundedText(about[key], defaultSiteContent.about[key], key === 'body' ? 1400 : 180)])),
+    contact: Object.fromEntries(['eyebrow', 'title', 'intro', 'buttonLabel'].map((key) => [key, boundedText(contact[key], defaultSiteContent.contact[key], 240)])),
+    social: socialUrls,
+    sections: Object.fromEntries(['services', 'about', 'safety', 'projects', 'contact'].map((key) => [key, sections[key] === true])),
+    ...lists,
+    footerText: boundedText(input.footerText, defaultSiteContent.footerText || 'All Rights Reserved.', 180)
+  };
+  try {
+    await updateStore('siteContent', {}, () => site);
+    await updateStore('settings', defaultCompanySettings, (current) => ({ ...defaultCompanySettings, ...current, companyName: site.companyName, email: site.email, phone: site.phone, address: site.address }));
+    const settings = { ...defaultCompanySettings, ...(await loadStore('settings', defaultCompanySettings)) };
+    return sendJson(res, 200, { site: { ...site, logoUrl: '/api/brand-logo', hasUploadedLogo: Boolean(settings.logo?.id) } });
+  } catch { return sendJson(res, 503, { error: 'Website content could not be saved.' }); }
 }
 
 async function findProject(id) {
@@ -635,7 +780,7 @@ async function getWorkspaceCompany(req, res) {
     return sendJson(res, 200, { company: {
       companyName: settings.companyName, address: settings.address, email: settings.email,
       phone: settings.phone, vatNumber: settings.vatNumber,
-      logoUrl: settings.logo?.id ? '/api/files/' + settings.logo.id + '?inline=1' : ''
+      logoUrl: '/api/brand-logo'
     } });
   } catch { return sendJson(res, 503, { error: 'Company details could not be loaded.' }); }
 }
@@ -653,7 +798,11 @@ async function saveCompanySettings(req, res) {
   }
   if (!settings.companyName || !settings.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.email)) return sendJson(res, 400, { error: 'Enter a company name and a valid company email.' });
   if (!settings.invoicePrefix) settings.invoicePrefix = 'FEM';
-  try { await updateStore('settings', defaultCompanySettings, () => settings); return sendJson(res, 200, { settings }); }
+  try {
+    await updateStore('settings', defaultCompanySettings, () => settings);
+    await updateStore('siteContent', {}, (current) => ({ ...current, companyName: settings.companyName, email: settings.email, phone: settings.phone, address: settings.address }));
+    return sendJson(res, 200, { settings });
+  }
   catch { return sendJson(res, 503, { error: 'Company settings could not be saved.' }); }
 }
 
@@ -860,7 +1009,7 @@ function serveStatic(req, res, pathname) {
     }
     res.writeHead(200, {
       'Content-Type': mimeTypes[path.extname(filePath)] || 'application/octet-stream',
-      'Cache-Control': path.basename(filePath) === 'index.html' ? 'no-cache' : 'public, max-age=3600',
+      'Cache-Control': ['.html', '.js', '.css'].includes(path.extname(filePath)) ? 'no-cache' : 'public, max-age=3600',
       'X-Content-Type-Options': 'nosniff'
     });
     if (req.method === 'HEAD') return res.end();
@@ -875,6 +1024,8 @@ const server = http.createServer((req, res) => {
   catch { return sendJson(res, 400, { error: 'Invalid request.' }); }
 
   if (req.method === 'GET' && pathname === '/api/health') return sendJson(res, 200, { status: 'ok' });
+  if (req.method === 'GET' && pathname === '/api/site-content') return void getSiteContent(req, res);
+  if (req.method === 'GET' && pathname === '/api/brand-logo') return void serveBrandLogo(req, res);
   if (req.method === 'GET' && pathname === '/api/workspace/projects') return void listWorkspaceProjects(req, res);
   if (req.method === 'GET' && pathname === '/api/workspace/invoices') return void listWorkspaceInvoices(req, res, false);
   if (req.method === 'GET' && pathname === '/api/workspace/company') return void getWorkspaceCompany(req, res);
@@ -883,6 +1034,8 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && pathname === '/api/auth/setup') return void createInitialAdmin(req, res);
   if (req.method === 'POST' && pathname === '/api/auth/login') return void login(req, res);
   if (req.method === 'POST' && pathname === '/api/auth/password') return void changeAccountPassword(req, res);
+  if (req.method === 'GET' && pathname === '/api/admin/site-content') return void getSiteContent(req, res, true);
+  if (req.method === 'PUT' && pathname === '/api/admin/site-content') return void saveSiteContent(req, res);
   if (req.method === 'GET' && pathname === '/api/auth/me') {
     const user = sessionUser(req);
     return user ? sendJson(res, 200, { user }) : sendJson(res, 401, { error: 'Sign in to continue.' });
