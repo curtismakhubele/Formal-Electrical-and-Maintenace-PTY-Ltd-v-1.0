@@ -1,39 +1,23 @@
-# Formal Electrical & Maintenance
+# Formal Electrical & Maintenance website
 
-A responsive company website and real enquiry intake service for Formal Electrical and Maintenance (Pty) Ltd.
+Responsive public website for Formal Electrical and Maintenance (Pty) Ltd, styled from the corporate website mockup supplied for this project.
 
 ## Run locally
 
-Requires Node.js 20 or newer. The app uses Node's built-in modules and has no package-install step.
+This is a static site. Open `index.html` directly, or serve this directory with any static file server. For example, with Node.js installed:
 
-```powershell
+```sh
 node server.js
 ```
 
-Open `http://localhost:3000`. The health endpoint is `http://localhost:3000/api/health`.
+Then open `http://localhost:3000`.
 
-Project enquiries are validated and appended to `data/enquiries.jsonl`. Keep that directory private and back it up. The site gives a success response only after the enquiry is saved. A small in-memory per-IP limit and a hidden bot-trap field reduce automated submissions. The private workspace at `/admin.html` allows a designated administrator to review the latest 500 enquiries with a secret `ADMIN_TOKEN`.
+## Publish
 
-## Production hosting
+The site is compatible with GitHub Pages. In the repository settings, set Pages to deploy from the `main` branch and the repository root. The public site uses relative asset paths and does not require a build step.
 
-This app includes a Node server; GitHub Pages can serve the static design but cannot run `/api/enquiries`. To enable the working form, deploy the repository to a Node.js host with:
+## Contact links
 
-- Node.js 20 or newer and the start command `node server.js`
-- HTTPS and a persistent private volume mounted for `DATA_DIR`
-- `PORT` set by the host, or defaulting to `3000`
-- A unique random `ADMIN_TOKEN` of at least 32 characters, stored as a host secret
-- `TRUST_PROXY_HOPS` set to the exact number of trusted reverse-proxy hops when the host supplies `X-Forwarded-For`; leave it at `0` otherwise
-- Regular encrypted backups and a documented retention process for enquiry records
+Phone number, email address, and street address displayed on the site are reproduced from the supplied mockup. Confirm these details with the business before using them in advertising. The contact actions open the visitor’s phone or email application; the static Pages site does not submit enquiries to a server.
 
-Set `DATA_DIR` to the mounted persistent volume. Generate an access token with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`, then save it as a host secret. Do not store it in source control. The enquiry file contains personal contact details, is never served as a static asset, and must not be committed. An authorised administrator can open `/admin.html` and enter the token; it remains in that browser tab's session storage until sign-out or tab closure. If the host sits behind a trusted reverse proxy, configure the exact number of proxy hops so request throttling can distinguish visitors; never trust forwarded headers from an untrusted client.
-
-The prior role selector and sample business dashboard have been removed. This release does not claim to provide accounts, work orders, quotations, a CRM or client portal. Those need an approved backend, access model and operating procedures before they are introduced.
-
-## Before a public business launch
-
-- Confirm the company's official public phone, email and street address. They were not present in the repository source, so the site uses only the Pretoria/Gauteng service area.
-- Decide who monitors the saved enquiry records and how quickly enquiries should be answered.
-- Review the privacy notice against the selected host, retention period and actual data handling process.
-- Verify company history, registrations, authorisations and service claims before adding them.
-- Deploy to a Node host. The existing GitHub Pages deployment cannot run the enquiry API.
-
+The bundled `server.js`, `admin.html`, and `admin.js` are for a separately hosted enquiry service. They are not linked from the public website and are not required for GitHub Pages.
