@@ -1,3 +1,55 @@
-const $=s=>document.querySelector(s);$('#year').textContent=new Date().getFullYear();$('#menu').onclick=()=>$('#nav').classList.toggle('open');$('#portalBtn').onclick=()=>$('#portal').classList.add('show');$('#close').onclick=()=>$('#portal').classList.remove('show');$('#demoLogin').onclick=()=>{const role=$('#role').value;$('#portal').classList.remove('show');$('#dashboard').classList.add('show');$('#welcome').textContent=role+' Dashboard';render('overview',role)};$('#logout').onclick=()=>$('#dashboard').classList.remove('show');$('#enquiry').onsubmit=e=>{e.preventDefault();$('#formStatus').textContent='Enquiry captured in this demo. Connect the API to securely store and route enquiries.';e.target.reset()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');render(b.dataset.tab,$('#welcome').textContent.split(' ')[0])});
-function render(tab,role){const c=$('#dashContent');const data={overview:`<h2>Business overview</h2><div class="metric-row"><div class="metric"><b>—</b><span>Active projects</span></div><div class="metric"><b>—</b><span>Open work orders</span></div><div class="metric"><b>—</b><span>Pending quotations</span></div></div><p class="note">Connect the API and database to display live company information. No operational records are stored in this demo.</p>`,jobs:`<h2>Work orders</h2><p>Create and track electrical, plumbing and facilities maintenance jobs.</p><form id="jobForm"><input required placeholder="Work order title"><select><option>Electrical</option><option>Facilities</option><option>Plumbing</option><option>Construction</option></select><select><option>New</option><option>Assigned</option><option>In progress</option><option>Completed</option></select><button class="gold-btn">Add demo work order</button></form><p id="jobStatus"></p>`,projectsTab:`<h2>Projects</h2><p>Track project scope, milestones, budgets, risks and handover documentation.</p><table><tr><th>Project</th><th>Stage</th><th>Owner</th></tr><tr><td>Sample refurbishment</td><td>Planning</td><td>Manager</td></tr></table>`,clients:`<h2>Clients</h2><p>Client directory and enquiry management.</p><input placeholder="Search clients"><button class="gold-btn">Add client</button>`,assets:`<h2>Asset register</h2><p>Register equipment, assign QR labels and track condition, location and maintenance history.</p><button class="gold-btn">Register asset</button>`,quotes:`<h2>Quotations</h2><p>Prepare estimates, record approvals and convert accepted quotations into projects.</p><button class="gold-btn">Create quotation</button>`,reports:`<h2>Reports & compliance</h2><p>Project progress, maintenance history, safety inspections, asset registers and close-out reports.</p><button class="gold-btn">Generate sample report</button>`};c.innerHTML=data[tab]||data.overview;const jf=$('#jobForm');if(jf)jf.onsubmit=e=>{e.preventDefault();$('#jobStatus').textContent='Demo work order added to this temporary screen. Persistent storage requires API setup.'}}
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+const menuButton = document.querySelector('.menu-toggle');
+const navigation = document.querySelector('.main-nav');
+const form = document.querySelector('#enquiry-form');
+const status = document.querySelector('#form-status');
+
+const year = document.querySelector('#year');
+if (year) year.textContent = new Date().getFullYear();
+
+menuButton?.addEventListener('click', () => {
+  const open = menuButton.getAttribute('aria-expanded') !== 'true';
+  menuButton.setAttribute('aria-expanded', String(open));
+  menuButton.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  navigation.classList.toggle('is-open', open);
+});
+
+navigation?.querySelectorAll('a').forEach((link) => {
+  link.addEventListener('click', () => {
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.setAttribute('aria-label', 'Open navigation');
+    navigation.classList.remove('is-open');
+  });
+});
+
+form?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  status.textContent = '';
+  status.className = 'form-status';
+  if (!form.reportValidity()) return;
+
+  const submit = form.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  submit.innerHTML = 'Sending… <span aria-hidden="true">↗</span>';
+
+  try {
+    const response = await fetch('/api/enquiries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(new FormData(form)))
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'We could not send your enquiry. Please try again.');
+    form.reset();
+    status.textContent = 'Thank you. Your enquiry has been received and the team will follow up.';
+    status.classList.add('is-success');
+  } catch (error) {
+    status.textContent = error.message === 'Failed to fetch'
+      ? 'The enquiry service is unavailable at the moment. Please try again later.'
+      : error.message;
+    status.classList.add('is-error');
+  } finally {
+    submit.disabled = false;
+    submit.innerHTML = 'Send project enquiry <span aria-hidden="true">↗</span>';
+  }
+});
+

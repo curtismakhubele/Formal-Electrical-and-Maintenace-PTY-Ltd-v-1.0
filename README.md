@@ -1,47 +1,39 @@
-# Formal Electrical and Maintenance (Pty) Ltd — Website + PWA starter
+# Formal Electrical & Maintenance
 
-## Included
-- Responsive corporate website in navy, gold and white
-- Service, company, project approach and enquiry sections
-- Installable Progressive Web App (PWA) manifest, icon and offline shell cache
-- Business portal UI with Admin, Manager, Technician and Client role selection
-- Demo modules: overview, work orders, projects, clients, assets, quotations and reports
-- Minimal Node/Express API starter and health endpoint
+A responsive company website and real enquiry intake service for Formal Electrical and Maintenance (Pty) Ltd.
 
 ## Run locally
-1. Install Node.js 18 or newer.
-2. In this folder run `npm install`.
-3. Run `npm start`.
-4. Open `http://localhost:3000`.
 
-For mobile installation, deploy behind HTTPS, open the site in Chrome on Android, then choose **Install app** or **Add to Home screen**. iPhone users can use Safari → Share → Add to Home Screen.
+Requires Node.js 20 or newer. The app uses Node's built-in modules and has no package-install step.
 
-## Important production work still required
-This is a working front-end/PWA starter, not a production business system. The portal is a demonstration and does not authenticate users. Do not enter confidential client or company data.
-Before production:
-- Implement secure authentication and role-based permissions (Admin, Manager, Technician, Client).
-- Add PostgreSQL schema and persistent storage for users, clients, projects, work orders, assets, stock, quotations and reports.
-- Add server-side validation, password hashing, MFA option, rate limiting, audit logs, backups and HTTPS.
-- Connect enquiry form to `/api/enquiries`, a database and an authorised email/CRM notification.
-- Implement file uploads with malware scanning and access controls.
-- Verify company address, contact details, registration number, tax/VAT details, CIDB/electrical registrations, insurance, certifications and claims before publication or tender use.
-- Replace illustrative/sample content with verified company projects, staff profiles and approved photographs.
-- Add privacy policy, POPIA notice, terms, cookie notice and retention schedule.
+```powershell
+node server.js
+```
 
-## Suggested domain names
-Check availability and trademark conflicts before purchasing:
-- `formalelectrical.co.za`
-- `formalelectricalandmaintenance.co.za`
-- `formalem.co.za`
-- `formalelectrical.co.za` is a concise first choice if available.
+Open `http://localhost:3000`. The health endpoint is `http://localhost:3000/api/health`.
 
-Use a South African registrar (for example, xneelo, Afrihost or Domains.co.za) to check `.co.za` availability. The package does not register a domain or include hosting.
+Project enquiries are validated and appended to `data/enquiries.jsonl`. Keep that directory private and back it up. The site gives a success response only after the enquiry is saved. A small in-memory per-IP limit and a hidden bot-trap field reduce automated submissions. The private workspace at `/admin.html` allows a designated administrator to review the latest 500 enquiries with a secret `ADMIN_TOKEN`.
 
-## Suggested first release roles
-- Admin: full system configuration, users, financial and operational records
-- Manager: projects, quotations, procurement, reporting and team allocation
-- Technician: assigned jobs, checklists, photos, materials and job completion
-- Client: own enquiries, quotations, project updates and service requests
+## Production hosting
 
-## Contact details
-The provided company listing gives the address as 4 S P Kwakwa St, Sualsvile, Pretoria, Gauteng 0125, South Africa. Phone and email were masked in the supplied source; add verified public contact details before launch.
+This app includes a Node server; GitHub Pages can serve the static design but cannot run `/api/enquiries`. To enable the working form, deploy the repository to a Node.js host with:
+
+- Node.js 20 or newer and the start command `node server.js`
+- HTTPS and a persistent private volume mounted for `DATA_DIR`
+- `PORT` set by the host, or defaulting to `3000`
+- A unique random `ADMIN_TOKEN` of at least 32 characters, stored as a host secret
+- `TRUST_PROXY_HOPS` set to the exact number of trusted reverse-proxy hops when the host supplies `X-Forwarded-For`; leave it at `0` otherwise
+- Regular encrypted backups and a documented retention process for enquiry records
+
+Set `DATA_DIR` to the mounted persistent volume. Generate an access token with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`, then save it as a host secret. Do not store it in source control. The enquiry file contains personal contact details, is never served as a static asset, and must not be committed. An authorised administrator can open `/admin.html` and enter the token; it remains in that browser tab's session storage until sign-out or tab closure. If the host sits behind a trusted reverse proxy, configure the exact number of proxy hops so request throttling can distinguish visitors; never trust forwarded headers from an untrusted client.
+
+The prior role selector and sample business dashboard have been removed. This release does not claim to provide accounts, work orders, quotations, a CRM or client portal. Those need an approved backend, access model and operating procedures before they are introduced.
+
+## Before a public business launch
+
+- Confirm the company's official public phone, email and street address. They were not present in the repository source, so the site uses only the Pretoria/Gauteng service area.
+- Decide who monitors the saved enquiry records and how quickly enquiries should be answered.
+- Review the privacy notice against the selected host, retention period and actual data handling process.
+- Verify company history, registrations, authorisations and service claims before adding them.
+- Deploy to a Node host. The existing GitHub Pages deployment cannot run the enquiry API.
+
