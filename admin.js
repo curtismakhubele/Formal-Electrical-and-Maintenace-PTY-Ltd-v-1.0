@@ -13,6 +13,7 @@ let users = [];
 let projects = [];
 let invoices = [];
 let companySettings = {};
+let showAllActivity = false;
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -114,10 +115,80 @@ function money(value) {
 }
 
 function updateOverview() {
-  document.querySelector('#stat-active').textContent = projects.filter((project) => project.status === 'In progress').length;
-  document.querySelector('#stat-completed').textContent = projects.filter((project) => project.status === 'Completed').length;
+  const active = projects.filter((project) => project.status === 'In progress').length;
+  const completed = projects.filter((project) => project.status === 'Completed').length;
+  const total = projects.length;
+  const certificates = projects.reduce((sum, project) => sum + (project.certificates || []).length, 0);
+  document.querySelector('#stat-active').textContent = active;
+  document.querySelector('#stat-completed').textContent = completed;
   document.querySelector('#stat-invoices').textContent = invoices.length;
-  document.querySelector('#stat-cocs').textContent = projects.reduce((sum, project) => sum + (project.certificates || []).length, 0);
+  document.querySelector('#stat-cocs').textContent = certificates;
+  document.querySelector('#stat-total').textContent = total;
+  document.querySelector('#legend-active').textContent = active;
+  document.querySelector('#legend-completed').textContent = completed;
+  document.querySelector('#legend-construction').textContent = projects.filter((project) => project.category === 'Construction').length;
+  document.querySelector('#legend-electrical').textContent = projects.filter((project) => project.category === 'Electrical').length;
+  document.querySelector('#project-donut').style.background = total ? 'conic-gradient(#1089f0 0 ' + (active / total * 100) + '%, #18b975 ' + (active / total * 100) + '% 100%)' : '#e5ebf3';
+  document.querySelector('#report-total-projects').textContent = total;
+  document.querySelector('#report-in-progress').textContent = active;
+  document.querySelector('#report-completed').textContent = completed;
+  document.querySelector('#report-certificates').textContent = certificates;
+  renderReportCategories();
+  renderRecentActivity();
+}
+
+function renderReportCategories() {
+  const target = document.querySelector('#report-categories');
+  if (!target) return;
+  target.replaceChildren();
+  for (const category of ['Construction', 'Electrical', 'General', 'Civil']) {
+    const count = projects.filter((project) => project.category === category).length;
+    const row = el('article', 'report-category');
+    row.append(el('span', 'report-category-icon', category.slice(0, 1)), el('span', '', category), el('strong', '', String(count)));
+    target.append(row);
+  }
+}
+
+function renderRecentActivity() {
+  const target = document.querySelector('#recent-activity');
+  if (!target) return;
+  const items = [];
+  projects.forEach((project) => {
+    items.push({ date: project.updatedAt || project.createdAt, icon: project.status === 'Completed' ? '✓' : '▣', title: project.status === 'Completed' ? 'Project completed' : 'Project updated', detail: project.reference + ' · ' + project.title, view: 'projects' });
+    (project.workLogs || []).forEach((work) => items.push({ date: work.createdAt || work.date, icon: '⚒', title: work.status === 'Completed' ? 'Work completed' : 'Work logged', detail: project.reference + ' · ' + work.title, view: 'projects' }));
+    (project.certificates || []).forEach((certificate) => items.push({ date: certificate.createdAt || certificate.issueDate, icon: '♙', title: 'COC certificate issued', detail: certificate.number + ' · ' + project.title, view: 'projects' }));
+  });
+  invoices.forEach((invoice) => items.push({ date: invoice.updatedAt || invoice.createdAt, icon: '▤', title: 'Invoice ' + String(invoice.status || 'saved').toLowerCase(), detail: invoice.invoiceNumber + ' · ' + invoice.clientName, view: 'invoices' }));
+  users.forEach((user) => items.push({ date: user.createdAt, icon: '♟', title: 'User account created', detail: user.email, view: 'users' }));
+  items.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  target.replaceChildren();
+  if (!items.length) { target.append(emptyMessage('Workspace activity will appear here as projects, invoices and users are added.')); document.querySelector('#notification-count').hidden = true; return; }
+  items.slice(0, showAllActivity ? items.length : 5).forEach((item, index) => {
+    const row = el('button', 'activity-item'); row.type = 'button'; row.dataset.view = item.view;
+    row.append(el('span', 'activity-marker activity-marker-' + (index % 4), item.icon));
+    const copy = el('span', 'activity-copy'); copy.append(el('strong', '', item.title), el('span', '', item.detail), el('time', '', item.date ? new Date(item.date).toLocaleString('en-ZA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recently'));
+    row.append(copy); row.addEventListener('click', () => openView(item.view)); target.append(row);
+  });
+  const badge = document.querySelector('#notification-count'); badge.textContent = String(items.length); badge.hidden = false;
+  const viewAll = document.querySelector('#view-all-activity'); if (viewAll) viewAll.textContent = showAllActivity ? 'Show Less ↑' : 'View All →';
+}
+
+function openView(name) {
+  const button = document.querySelector('[data-view="' + name + '"]');
+  if (button) button.click();
+}
+
+function updateWorkspaceClock() {
+  const node = document.querySelector('#workspace-clock');
+  if (node) node.textContent = new Date().toLocaleString('en-ZA', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function exportReports() {
+  const rows = [['Project reference', 'Project', 'Client', 'Category', 'Status', 'COCs issued', 'Updated']];
+  projects.forEach((project) => rows.push([project.reference, project.title, project.clientName, project.category, project.status, (project.certificates || []).length, project.updatedAt || project.createdAt || '']));
+  const csv = rows.map((row) => row.map((value) => '"' + String(value ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  const link = el('a'); link.href = url; link.download = 'formal-electrical-project-report.csv'; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function refreshAssigneeOptions() {
@@ -297,6 +368,7 @@ function renderUsers() {
   if (!rows.length) userList.append(emptyMessage('No user accounts have been created.'));
   else rows.forEach((row) => userList.append(row));
   refreshAssigneeOptions();
+  updateOverview();
 }
 
 function escapeHtml(value) {
@@ -432,10 +504,25 @@ async function loadWorkspace() {
 }
 
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => {
-  document.querySelectorAll('[data-view]').forEach((nav) => nav.classList.toggle('active', nav === button));
+  document.querySelectorAll('[data-view]').forEach((nav) => nav.classList.toggle('active', nav.dataset.view === button.dataset.view));
   document.querySelectorAll('[data-section]').forEach((section) => { section.hidden = section.dataset.section !== button.dataset.view; });
 }));
 document.querySelectorAll('[data-go-view]').forEach((button) => button.addEventListener('click', () => document.querySelector('[data-view="' + button.dataset.goView + '"]').click()));
+document.querySelectorAll('[data-quick-action="new-project"]').forEach((button) => button.addEventListener('click', () => {
+  openView('projects');
+  document.querySelector('#create-project-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('#create-project-form').elements.title.focus({ preventScroll: true });
+}));
+document.querySelector('#notification-button').addEventListener('click', () => { openView('overview'); document.querySelector('#recent-activity-panel').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+document.querySelector('#view-all-activity').addEventListener('click', () => { showAllActivity = !showAllActivity; renderRecentActivity(); });
+document.querySelector('#export-report').addEventListener('click', exportReports);
+document.querySelector('#refresh-reports').addEventListener('click', () => Promise.all([loadProjects(), loadInvoices()]).then(updateOverview).catch((error) => setStatus(dashboardStatus, error.message, true)));
+const savedTheme = localStorage.getItem('formal-admin-theme');
+if (savedTheme === 'dark') document.body.classList.add('admin-dark');
+document.querySelector('#theme-toggle').addEventListener('click', () => {
+  const dark = document.body.classList.toggle('admin-dark');
+  localStorage.setItem('formal-admin-theme', dark ? 'dark' : 'light');
+});
 
 document.querySelector('#sign-out').addEventListener('click', async () => {
   try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
@@ -584,7 +671,10 @@ document.querySelector('#upload-company-logo').addEventListener('click', async (
     const { user } = await response.json();
     if (user.role !== 'admin') { location.replace('/login.html?role=admin'); return; }
     sessionCheck.hidden = true;
+    document.body.classList.add('admin-authenticated');
+    document.querySelector('#admin-profile-email').replaceChildren(document.createTextNode(user.email), el('small', '', 'Administrator'));
     dashboard.hidden = false;
+    updateWorkspaceClock(); setInterval(updateWorkspaceClock, 60000);
     await loadWorkspace();
   } catch {
     document.querySelector('#session-status').textContent = 'The sign-in server could not be reached.';

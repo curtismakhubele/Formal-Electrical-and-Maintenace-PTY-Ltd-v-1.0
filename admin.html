@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102a3a">
   <meta name="robots" content="noindex,nofollow"><title>Admin workspace | Formal Electrical &amp; Maintenance</title>
-  <link rel="stylesheet" href="/styles.css?v=20261128a"><link rel="stylesheet" href="/admin.css?v=20261128a"><link rel="stylesheet" href="/admin-users.css"><script src="/admin.js?v=20261128a" defer></script>
+  <link rel="stylesheet" href="/styles.css?v=20261128-dashboard"><link rel="stylesheet" href="/admin.css?v=20261128-dashboard"><link rel="stylesheet" href="/admin-users.css"><script src="/admin.js?v=20261128-dashboard" defer></script>
 </head>
 <body class="admin-page">
   <header class="site-header admin-header">
@@ -12,15 +12,33 @@
   </header>
   <main class="admin-main">
     <section class="admin-login" id="session-check"><p class="eyebrow"><span></span> Private workspace</p><h1>Checking access…</h1><p id="session-status" role="status" aria-live="polite">Verifying your administrator session.</p><a class="admin-home" href="/login.html?role=admin">Sign in as administrator</a></section>
-    <div class="admin-dashboard" id="dashboard-view" hidden>
-      <div class="admin-title"><div><p class="eyebrow"><span></span> Private workspace</p><h1>Admin workspace</h1><p>Projects, completion records, COCs, invoices, users, and company settings.</p></div><button class="button button-light" id="sign-out" type="button">Sign out</button></div>
+    <div class="admin-dashboard admin-shell" id="dashboard-view" hidden>
+      <aside class="admin-sidebar">
+        <a class="sidebar-brand" href="/" aria-label="Formal Electrical home"><img src="/api/brand-logo" alt="Formal Electrical logo"><span>FORMAL ELECTRICAL<small>ADMIN WORKSPACE</small></span></a>
+        <nav class="sidebar-nav" aria-label="Admin navigation">
+          <button type="button" class="active" data-view="overview">⌂ <span>Dashboard</span></button>
+          <button type="button" data-view="projects">▣ <span>Projects</span><b>›</b></button>
+          <button type="button" data-view="invoices">▤ <span>Invoices</span><b>›</b></button>
+          <button type="button" data-view="users">♟ <span>Users</span></button>
+          <button type="button" data-view="site">▣ <span>Website Editor</span></button>
+          <button type="button" data-view="settings">⚙ <span>Settings</span><b>›</b></button>
+          <button type="button" data-view="enquiries">✉ <span>Enquiries</span></button>
+          <button type="button" data-view="reports">▥ <span>Reports</span></button>
+        </nav>
+        <div class="sidebar-quick"><h2>Quick Actions</h2><button class="quick-primary" type="button" data-quick-action="new-project">＋ &nbsp; New Project</button><button type="button" data-view="reports">▥ &nbsp; View Reports</button><button type="button" data-view="users">♟ &nbsp; Manage Users</button><button type="button" data-view="settings">⚙ &nbsp; Settings</button></div>
+        <div class="sidebar-account"><span class="avatar">♟</span><span id="admin-profile-email">Administrator<small>Administrator</small></span></div>
+        <button class="sidebar-logout" id="sign-out" type="button">⇥ &nbsp; Logout</button>
+      </aside>
+      <div class="admin-content">
+      <header class="workspace-topbar"><div class="topbar-lock">🔒 <strong>Private workspace</strong></div><div class="topbar-actions"><button type="button" class="icon-button" id="notification-button" aria-label="View recent activity">♧ <span id="notification-count" hidden>0</span></button><time id="workspace-clock"></time><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle light and dark theme"><span>☼</span><i></i></button></div></header>
+      <div class="workspace-banner"><div><p class="eyebrow"><span></span> Formal Electrical &amp; Maintenance</p><h1>Admin <em>workspace</em></h1><p>Projects, completion records, COCs, invoices, users, and company settings.</p><span class="banner-rule"></span></div></div>
       <nav class="workspace-nav" aria-label="Workspace sections">
-        <button type="button" class="active" data-view="overview">Overview</button><button type="button" data-view="projects">Projects</button><button type="button" data-view="invoices">Invoices</button><button type="button" data-view="users">Users</button><button type="button" data-view="site">Website editor</button><button type="button" data-view="settings">Settings</button><button type="button" data-view="enquiries">Enquiries</button>
+        <button type="button" class="active" data-view="overview">⌂ &nbsp; Overview</button><button type="button" data-view="projects">▣ &nbsp; Projects</button><button type="button" data-view="invoices">▤ &nbsp; Invoices</button><button type="button" data-view="users">♟ &nbsp; Users</button><button type="button" data-view="site">◎ &nbsp; Website editor</button><button type="button" data-view="settings">⚙ &nbsp; Settings</button><button type="button" data-view="enquiries">✉ &nbsp; Enquiries</button>
       </nav>
       <p class="form-status" id="dashboard-status" role="status" aria-live="polite"></p>
       <section class="workspace-view" data-section="overview">
-        <div class="workspace-stats"><article><span>Active projects</span><strong id="stat-active">—</strong></article><article><span>Completed projects</span><strong id="stat-completed">—</strong></article><article><span>Invoices</span><strong id="stat-invoices">—</strong></article><article><span>Certificates issued</span><strong id="stat-cocs">—</strong></article></div>
-        <div class="workspace-intro"><h2>Project workspace</h2><p>Keep project status, work logs, customer assignments, contract documents, certificates, and invoice history together in one place.</p><button class="admin-refresh" type="button" data-go-view="projects">Open projects →</button></div>
+        <div class="workspace-stats"><article class="stat-card stat-blue"><span class="stat-icon">▱</span><div><span>Active Projects</span><strong id="stat-active">—</strong><small><i>↗</i> In progress</small></div></article><article class="stat-card stat-gold"><span class="stat-icon">✓</span><div><span>Completed Projects</span><strong id="stat-completed">—</strong><small><i>↗</i> Completed</small></div></article><article class="stat-card stat-blue-light"><span class="stat-icon">▤</span><div><span>Invoices</span><strong id="stat-invoices">—</strong><small><i>↗</i> All records</small></div></article><article class="stat-card stat-gold"><span class="stat-icon">♙</span><div><span>Certificates Issued</span><strong id="stat-cocs">—</strong><small><i>↗</i> COC records</small></div></article></div>
+        <div class="overview-grid"><section class="overview-panel project-summary"><header><div><span class="panel-icon">▥</span><h2>Project Workspace</h2></div><button type="button" class="panel-action" data-go-view="projects">Open Projects →</button></header><p>Track work status, completion records, customer assignments, contracts and certificates in one place.</p><div class="summary-body"><div class="project-donut" id="project-donut"><div><strong id="stat-total">0</strong><span>Projects</span></div></div><div class="project-legend"><p><i class="dot-blue"></i> In Progress <b id="legend-active">0</b></p><p><i class="dot-green"></i> Completed <b id="legend-completed">0</b></p><p><i class="dot-gold"></i> Construction <b id="legend-construction">0</b></p><p><i class="dot-red"></i> Electrical <b id="legend-electrical">0</b></p></div><div class="quick-links"><h3>Quick Links</h3><button type="button" data-view="projects">▣ &nbsp; View All Projects</button><button type="button" data-quick-action="new-project">＋ &nbsp; Add Project</button><button type="button" data-view="reports">▥ &nbsp; View Reports</button></div></div></section><section class="overview-panel activity-panel" id="recent-activity-panel"><header><h2>⚡ &nbsp; Recent Activity</h2><button class="text-action" type="button" id="view-all-activity">View All →</button></header><div id="recent-activity" class="activity-list"></div></section></div>
       </section>
       <section class="workspace-view" data-section="projects" hidden>
         <div class="section-heading"><div><p class="eyebrow"><span></span> Delivery</p><h2>Projects</h2><p>Classify work and track progress from start through completion.</p></div></div>
@@ -96,6 +114,8 @@
         <div class="section-heading"><div><p class="eyebrow"><span></span> Website</p><h2>Enquiries</h2><p>Review messages received from the public website.</p></div><button class="admin-refresh" id="refresh-enquiries" type="button">Refresh ↻</button></div>
         <div class="workspace-list" id="enquiry-list"></div>
       </section>
+      <section class="workspace-view" data-section="reports" hidden><div class="section-heading"><div><p class="eyebrow"><span></span> Insights</p><h2>Reports</h2><p>Live summaries calculated from your project, invoice and certificate records.</p></div><button class="primary-action" type="button" id="export-report">Download CSV report</button></div><div class="workspace-stats report-stats"><article><span>Projects</span><strong id="report-total-projects">0</strong></article><article><span>In Progress</span><strong id="report-in-progress">0</strong></article><article><span>Completed</span><strong id="report-completed">0</strong></article><article><span>COCs Issued</span><strong id="report-certificates">0</strong></article></div><div class="overview-panel"><header><h2>Projects by category</h2><button class="admin-refresh" type="button" id="refresh-reports">Refresh report ↻</button></header><div id="report-categories" class="report-category-grid"></div></div></section>
+      </div>
     </div>
   </main>
 </body>
